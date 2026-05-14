@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭植物栽培云端控制系统</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f4f7f6; color: #333; text-align: center; margin: 0; padding: 20px; }
+        h1 { color: #2c3e50; margin-bottom: 20px; font-size: 24px;}
+        .dashboard { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; max-width: 900px; margin: 0 auto; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); width: 160px; }
+        .value { font-size: 28px; font-weight: bold; color: #27ae60; margin: 10px 0; }
+        .label { color: #7f8c8d; font-size: 16px; }
+        .panel { margin-top: 25px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); max-width: 800px; margin-left: auto; margin-right: auto; }
+        .btn-group { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        button { border: none; padding: 10px 20px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; }
+        .btn-on { background-color: #2ecc71; } .btn-on:hover { background-color: #27ae60; }
+        .btn-off { background-color: #e74c3c; } .btn-off:hover { background-color: #c0392b; }
+        .btn-auto { background-color: #3498db; } .btn-auto:hover { background-color: #2980b9; }
+        .btn-save { background-color: #9b59b6; width: 100%; max-width: 300px; margin-top: 15px; padding: 12px;} .btn-save:hover { background-color: #8e44ad; }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 10px; font-size: 12px; color: white; background: #95a5a6; margin-top: 8px;}
+        .status-active { background: #2ecc71; }
+        
+        /* 阈值设置区样式 */
+        .setting-row { display: flex; flex-wrap: wrap; justify-content: space-around; text-align: left; margin-top: 15px;}
+        .setting-item { width: 45%; min-width: 250px; margin-bottom: 15px; font-weight: bold; color: #34495e; font-size: 14px;}
+        .setting-item input { width: 50px; padding: 5px; border: 1px solid #bdc3c7; border-radius: 5px; text-align: center; font-weight: bold; margin: 0 5px;}
+    </style>
+</head>
+<body>
+
+    <h1>🌱 智能植物栽培控制中心</h1>
+
+    <div class="dashboard">
+        <div class="card"><div class="label">🌡️ 环境温度</div><div class="value" id="val_temp">-- ℃</div></div>
+        <div class="card"><div class="label">💧 环境湿度</div><div class="value" id="val_hum">-- %</div></div>
+        <div class="card"><div class="label">☀️ 光照强度</div><div class="value" id="val_light">-- %</div></div>
+        <div class="card"><div class="label">🪴 土壤湿度</div><div class="value" id="val_soil">-- %</div></div>
+    </div>
+
+    <div class="panel">
+        <h2 style="color: #2c3e50; margin-top:0; font-size: 18px;">🎮 设备开关控制</h2>
+        <div class="btn-group">
+            <div style="text-align: center;">
+                <button class="btn-auto" onclick="sendCommand('auto_on')">开启自动模式</button>
+                <button class="btn-off" onclick="sendCommand('auto_off')">手动模式</button><br>
+                <span class="status-badge" id="status_aut">当前模式: 未知</span>
+            </div>
+        </div>
+        <div class="btn-group" style="margin-top: 20px;">
+            <div style="text-align: center;">
+                <button class="btn-on" onclick="sendCommand('fan_on')">打开风扇</button>
+                <button class="btn-off" onclick="sendCommand('fan_off')">关闭</button><br>
+                <span class="status-badge" id="status_fan">风扇: 未知</span>
+            </div>
+            <div style="text-align: center;">
+                <button class="btn-on" onclick="sendCommand('led_on')">打开补光</button>
+                <button class="btn-off" onclick="sendCommand('led_off')">关闭</button><br>
+                <span class="status-badge" id="status_led">补光: 未知</span>
+            </div>
+            <div style="text-align: center;">
+                <button class="btn-on" onclick="sendCommand('pump_on')">打开水泵</button>
+                <button class="btn-off" onclick="sendCommand('pump_off')">关闭</button><br>
+                <span class="status-badge" id="status_pump">水泵: 未知</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2 style="color: #2c3e50; margin-top:0; font-size: 18px;">⚙️ 报警阈值设置</h2>
+        <div class="setting-row">
+            <div class="setting-item">
+                温度 下限/上限：<br>
+                <input type="number" id="in_tmpL" value="15"> - <input type="number" id="in_tmpH" value="34"> ℃
+            </div>
+            <div class="setting-item">
+                湿度 下限/上限：<br>
+                <input type="number" id="in_humL" value="14"> - <input type="number" id="in_humH" value="76"> %
+            </div>
+            <div class="setting-item">
+                光照 报警下限：<br>
+                <input type="number" id="in_pm25H" value="68"> %
+            </div>
+            <div class="setting-item">
+                土壤 报警下限：<br>
+                <input type="number" id="in_tuH" value="10"> %
+            </div>
+        </div>
+        <button class="btn-save" onclick="sendThresholds()">💾 保存并上传阈值</button>
+    </div>
+
+    <script>
+        const UID = "df16cdc0ccb2a154a07b7517e57d224a";
+        const TOPIC = "PlantSystem";
+
+        function sendCommand(cmd) {
+            const url = `https://api.bemfa.com/api/device/v1/data/1/push/get/?uid=${UID}&topic=${TOPIC}&type=3&msg=${cmd}`;
+            fetch(url).then(r => r.json()).catch(e => console.error('Error:', e));
+        }
+
+        // 发送阈值组装的指令
+        function sendThresholds() {
+            const tL = document.getElementById('in_tmpL').value;
+            const tH = document.getElementById('in_tmpH').value;
+            const hL = document.getElementById('in_humL').value;
+            const hH = document.getElementById('in_humH').value;
+            const p_H = document.getElementById('in_pm25H').value;
+            const t_H = document.getElementById('in_tuH').value;
+            
+            // 组装格式：#SET:15,34,14,76,68,10#
+            const cmd = `#SET:${tL},${tH},${hL},${hH},${p_H},${t_H}#`;
+            sendCommand(cmd);
+            alert("✅ 阈值指令已发送！\n请留意单片机是否发出滴滴两声提示音。");
+        }
+
+        function fetchData() {
+            const url = `https://api.bemfa.com/api/device/v1/data/1/get/?uid=${UID}&topic=${TOPIC}&type=3`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.code === 0 && data.data.length > 0) {
+                        try {
+                            const msg = JSON.parse(data.data[0].msg);
+                            document.getElementById('val_temp').innerText = msg.temp + " ℃";
+                            document.getElementById('val_hum').innerText = msg.hum + " %";
+                            document.getElementById('val_light').innerText = msg.light + " %";
+                            document.getElementById('val_soil').innerText = msg.soil + " %";
+
+                            updateStatus('status_aut', msg.aut, '自动模式', '手动模式');
+                            updateStatus('status_fan', msg.fan, '运行中', '已关闭');
+                            updateStatus('status_led', msg.led, '已点亮', '已关闭');
+                            updateStatus('status_pump', msg.water, '抽水中', '已关闭');
+                        } catch (e) {}
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function updateStatus(elementId, value, onText, offText) {
+            const el = document.getElementById(elementId);
+            if(value === 1) {
+                el.innerText = el.innerText.split(':')[0] + ": " + onText;
+                el.classList.add('status-active');
+            } else {
+                el.innerText = el.innerText.split(':')[0] + ": " + offText;
+                el.classList.remove('status-active');
+            }
+        }
+
+        window.onload = function() {
+            fetchData();
+            setInterval(fetchData, 2000);
+        };
+    </script>
+</body>
+</html>
